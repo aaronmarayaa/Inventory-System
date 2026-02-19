@@ -1,0 +1,46 @@
+body { 
+    font-family: Arial, sans-serif;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+.cards {
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 5px;
+    padding: 1rem;
+}
+
+.choco-card {
+    border: 1px solid #ccc;
+    margin: 10px 0;
+    padding: 2rem 0;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.regular-user {
+    padding: 1rem;
+}
+
+.search-add {
+    max-width: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+
+.search-add .search-bar {
+    width: 40%;
+    height: 2rem;
+    border-radius: 7px;
+}
+.search-add input[type="button"] {
+    border: none;
+    border-radius: 7px;
+    background-color: #36030e;
+    color: white;
+}
