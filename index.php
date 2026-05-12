@@ -2,6 +2,22 @@
     session_start();
 
     require_once __DIR__ . '/security/csrf.php';
+    require_once __DIR__ . '/security/rememberMe.php';
+
+    if (empty($_SESSION['loginSuccess']) && !empty($_COOKIE['remember_me'])) {
+        require __DIR__ . '/lib/connection.php';
+
+        try {
+            loginFromRememberMeCookie($conn);
+        } catch (Throwable $exception) {
+            error_log('Remember me auto-login failed: ' . $exception->getMessage());
+            clearRememberMeCookie();
+        } finally {
+            if (isset($conn)) {
+                $conn->close();
+            }
+        }
+    }
 
     if (!empty($_SESSION['loginSuccess']) && $_SESSION['loginSuccess'] === true) {
         header('Location: pages/home.php');
@@ -112,6 +128,11 @@
                         </button>
                     </div>
                 </div>
+
+                <label class="remember-me-option" for="remember_me">
+                    <input type="checkbox" id="remember_me" name="remember_me" value="true">
+                    <span>Remember me</span>
+                </label>
 
                 <button type="submit" class="login-submit-btn">Login</button>
             </form>

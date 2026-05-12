@@ -2,9 +2,9 @@
     session_start();
 
     require_once __DIR__ . '/../security/csrf.php';
-    require "../lib/connection.php";
+    require_once __DIR__ . '/../security/rememberMe.php';
+    require __DIR__ . '/../lib/connection.php';
 
-    // login_process.php is inside /services, so ../index.php goes back to your login page.
     $loginPage = "../index.php";
 
     function redirectWithLoginError(string $message, string $loginPage): void {
@@ -57,27 +57,33 @@
             redirectWithLoginError("Account is archived.", $loginPage);
         }
 
-        // Your current system appears to store plain-text passwords.
-        // If you later use password_hash(), replace this condition with password_verify().
         if ($password !== $user['password']) {
             redirectWithLoginError("Invalid credentials.", $loginPage);
         }
 
         unset($_SESSION['login_error']);
 
-        $_SESSION['loginSuccess'] = true;
-        $_SESSION['role'] = $user['role'];
-        $_SESSION['id'] = $user['id'];
-        $_SESSION['first_name'] = $user['first_name'];
-        $_SESSION['last_name'] = $user['last_name'];
+        setUserSession($user);
+
+        if (rememberMeChecked()) {
+            createRememberMeToken($conn, (int) $user['id']);
+        } else {
+            deleteRememberMeToken($conn);
+            clearRememberMeCookie();
+        }
 
         header("Location: ../pages/home.php");
         exit();
-    } catch (Exception $exception) {
+    } catch (Throwable $exception) {
         error_log("Login error: " . $exception->getMessage());
         redirectWithLoginError("Something went wrong. Please try again.", $loginPage);
     } finally {
-        if (isset($sqlStatement)) { $sqlStatement->close(); }
-        if (isset($conn)) { $conn->close(); }
+        if (isset($sqlStatement)) {
+            $sqlStatement->close();
+        }
+
+        if (isset($conn)) {
+            $conn->close();
+        }
     }
 ?>
