@@ -7,6 +7,8 @@
         exit();
     }
 
+require_once '../security/csrf.php';
+requireValidCsrfToken('../pages/home.php?error=invalid_request');
     $userId = (int) $_SESSION['id'];
     $inventoryId = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
 

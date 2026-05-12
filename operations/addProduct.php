@@ -7,6 +7,8 @@
         exit();
     }
 
+require_once '../security/csrf.php';
+requireValidCsrfToken('../pages/home.php?error=invalid_request');
     $userId = (int) $_SESSION['id'];
     $chocolateId = filter_input(INPUT_POST, 'chocolateItem', FILTER_VALIDATE_INT);
     $chocolateQuantity = filter_input(INPUT_POST, 'chocolateQuantity', FILTER_VALIDATE_INT);

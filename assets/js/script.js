@@ -376,3 +376,19 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeConfirmationHandlers();
     initializeFlashMessages();
 });
+
+function toggleLoginPassword() {
+    const passwordInput = document.getElementById('password');
+    const toggleButton = document.querySelector('.password-toggle');
+
+    if (!passwordInput) {
+        return;
+    }
+
+    const shouldShow = passwordInput.type === 'password';
+    passwordInput.type = shouldShow ? 'text' : 'password';
+
+    if (toggleButton) {
+        toggleButton.textContent = shouldShow ? 'Hide' : 'Show';
+    }
+}

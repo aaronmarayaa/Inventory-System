@@ -2,6 +2,8 @@
     session_start();
     session_regenerate_id(true);
 
+    require_once __DIR__ . '/../security/csrf.php';
+
     if (empty($_SESSION['loginSuccess']) || $_SESSION['loginSuccess'] !== true) {
         header("Location: ../exceptions/unauthorized.php");
         exit();

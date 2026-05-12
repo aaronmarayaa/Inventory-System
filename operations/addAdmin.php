@@ -7,6 +7,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
+require_once '../security/csrf.php';
+requireValidCsrfToken('../pages/home.php?error=invalid_request');
 require '../lib/connection.php';
 
 function redirectHome(string $query): void {

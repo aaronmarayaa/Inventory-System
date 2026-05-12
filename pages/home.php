@@ -1,6 +1,9 @@
 <?php
     require_once '../services/session.php';
+    require_once '../security/csrf.php';
+
     $currentRole = $_SESSION['role'];
+    $csrfToken = csrfToken();
 
     function filter($data) {
         return htmlspecialchars((string) $data, ENT_QUOTES, 'utf-8');
@@ -39,6 +42,7 @@
             'invalid_user' => 'Please select a valid user account.',
             'invalid_item' => 'Please select a valid item.',
             'unauthorized_action' => 'You are not allowed to do that action.',
+            'invalid_request' => 'Invalid request. Please refresh the page and try again.',
             'delete_failed' => 'Delete failed. Please try again.',
             'update_failed' => 'Update failed. Please try again.',
             'add_failed' => 'Add failed. Please try again.'
@@ -110,6 +114,7 @@
             <div class="header-actions">
                 <button type="button" class="addButton" onclick="openAddAdminModal()">Add Admin</button>
                 <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
+                    <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                     <button type="submit" class="logoutButton">Logout</button>
                 </form>
             </div>
@@ -166,6 +171,7 @@
                             </button>
 
                             <form action="../operations/removeAdmin.php" method="post" data-confirm-title="Remove Admin" data-confirm-message="This admin account will be archived and will no longer have admin access." data-confirm-confirm-label="Remove Admin" data-confirm-danger="true">
+                                <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                                 <input type="hidden" name="id" value="<?= $adminId ?>">
                                 <button type="submit" class="btn btn-delete">Remove Admin</button>
                             </form>
@@ -215,6 +221,7 @@
 
                         <div class="crud-actions management-actions">
                             <form action="../operations/addAdmin.php" method="post" data-confirm-title="Add User as Admin" data-confirm-message="This regular user will be promoted and given admin access." data-confirm-confirm-label="Add as Admin">
+                                <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                                 <input type="hidden" name="user_id" value="<?= $regularId ?>">
                                 <button type="submit" class="btn btn-submit">Add as Admin</button>
                             </form>
@@ -238,6 +245,7 @@
                 </div>
 
                 <form action="../operations/addAdmin.php" method="post" class="modal-form" data-confirm-title="Add New Admin" data-confirm-message="Create this new admin account?" data-confirm-confirm-label="Add Admin">
+                    <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="adminFirstName">First Name</label>
@@ -281,6 +289,7 @@
                 </div>
 
                 <form action="../operations/resetPassword.php" method="post" class="modal-form" data-confirm-title="Reset Password" data-confirm-message="This will replace the admin password with the new password you entered." data-confirm-confirm-label="Reset Password" data-confirm-danger="true">
+                    <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                     <input type="hidden" name="id" id="resetPasswordAdminId">
 
                     <div class="form-group">
@@ -315,6 +324,7 @@
                 <div class="header-actions">
                     <span class="role-pill">ADMIN</span>
                     <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
+                        <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                         <button type="submit" class="logoutButton">Logout</button>
                     </form>
                 </div>
@@ -438,6 +448,7 @@
                                         <a class="btn btn-update requires-confirm" href="../pages/updateItem.php?id=<?= $inventoryId ?>" data-confirm-title="Approve Request" data-confirm-message="Approve this pending product request?" data-confirm-confirm-label="Approve">Approve</a>
 
                                         <form action="../operations/deleteItem.php" method="post" data-confirm-title="Reject Request" data-confirm-message="This pending product request will be rejected." data-confirm-confirm-label="Reject" data-confirm-danger="true">
+                                            <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                                             <input type="hidden" name="id" value="<?= $inventoryId ?>">
                                             <button type="submit" class="btn btn-delete">Reject</button>
                                         </form>
@@ -494,6 +505,7 @@
                                     <a class="btn btn-update" href="../pages/updateUser.php?id=<?= $regularUserId ?>">Update</a>
 
                                     <form action="../operations/deleteUser.php" method="post" data-confirm-title="Delete User" data-confirm-message="This user account will be deleted or archived depending on your operation logic." data-confirm-confirm-label="Delete" data-confirm-danger="true">
+                                        <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                                         <input type="hidden" name="id" value="<?= $regularUserId ?>">
                                         <button type="submit" class="btn btn-delete">Delete</button>
                                     </form>
@@ -526,6 +538,7 @@
                 <div class="header-actions">
                     <button type="button" class="addButton" onclick="openAddProductModal()">Add Product</button>
                     <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
+                        <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                         <button type="submit" class="logoutButton">Logout</button>
                     </form>
                 </div>
@@ -679,6 +692,7 @@
                                         </button>
 
                                         <form action="../operations/deleteProduct.php" method="post" data-confirm-title="Delete Pending Request" data-confirm-message="This pending product request will be deleted." data-confirm-confirm-label="Delete" data-confirm-danger="true">
+                                            <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                                             <input type="hidden" name="id" value="<?= $inventoryId ?>">
                                             <button type="submit" class="btn btn-delete">Delete</button>
                                         </form>
@@ -704,6 +718,7 @@
                     </div>
 
                     <form action="../operations/addProduct.php" method="post" class="modal-form" data-confirm-title="Submit Product Request" data-confirm-message="Submit this product request for admin approval?" data-confirm-confirm-label="Submit Request">
+                        <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                         <div class="form-group">
                             <label for="chocolateItem">Chocolate</label>
                             <select name="chocolateItem" id="chocolateItem" required>
@@ -743,6 +758,7 @@
                     </div>
 
                     <form action="../operations/updateProduct.php" method="post" class="modal-form" data-confirm-title="Update Product Request" data-confirm-message="Save the changes to this pending product request?" data-confirm-confirm-label="Save Changes">
+                        <input type="hidden" name="token" value="<?= filter($csrfToken) ?>">
                         <input type="hidden" name="id" id="updateProductId">
 
                         <div class="form-group">
