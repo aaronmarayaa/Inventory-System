@@ -588,7 +588,6 @@
                         <h2>Regular Users</h2>
                         <p>Add users, archive users, or reset regular user passwords.</p>
                     </div>
-                    <button type="button" class="addButton open-admin-add-user-button">Add User</button>
                 </div>
 
                 <div class="dashboard-list">
@@ -811,7 +810,6 @@
                     <div class="modal-header">
                         <div>
                             <p class="modal-kicker">User account</p>
-                            <h2 id="adminAddUserModalTitle">Add User</h2>
                         </div>
                         <button type="button" class="modal-close" data-close-modal="adminAddUserModal" aria-label="Close add user modal">&times;</button>
                     </div>
