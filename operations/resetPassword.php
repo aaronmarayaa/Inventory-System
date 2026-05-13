@@ -13,9 +13,15 @@
     $currentRole = $_SESSION['role'] ?? '';
     $userId = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
     $newPassword = trim($_POST['new_password'] ?? '');
+    $confirmPassword = trim($_POST['confirm_password'] ?? '');
 
-    if ($userId === false || $userId === null || $userId <= 0 || $newPassword === '') {
+    if ($userId === false || $userId === null || $userId <= 0 || $newPassword === '' || $confirmPassword === '') {
         header('Location: ../pages/home.php?error=invalid_reset_password');
+        exit();
+    }
+
+    if ($newPassword !== $confirmPassword) {
+        header('Location: ../pages/home.php?error=password_mismatch');
         exit();
     }
 

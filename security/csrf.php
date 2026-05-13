@@ -3,8 +3,8 @@
         session_start();
     }
 
-    function csrfToken() {
-        if (!isset($_SESSION['csrf_token'])) {
+    function csrfToken(): string {
+        if (!isset($_SESSION['csrf_token']) || $_SESSION['csrf_token'] === '') {
             $token = bin2hex(random_bytes(16));
             $_SESSION['csrf_token'] = $token;
         } else {
@@ -14,17 +14,17 @@
         return $token;
     }
 
-    function createCsrfToken() {
+    function createCsrfToken(): string {
         return csrfToken();
     }
 
-    function csrfInput() {
+    function csrfInput(): string {
         $token = csrfToken();
 
         return '<input type="hidden" name="token" value="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
     }
 
-    function isCsrfTokenValid() {
+    function isCsrfTokenValid(): bool {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return false;
         }
@@ -36,7 +36,7 @@
         return hash_equals($_SESSION['csrf_token'], $_POST['token']);
     }
 
-    function validateCsrfToken($redirectPath = '../index.php') {
+    function validateCsrfToken(string $redirectPath = '../index.php'): void {
         if (!isCsrfTokenValid()) {
             $_SESSION['error'] = 'Invalid request. Please refresh the page and try again.';
             header('Location: ' . $redirectPath);
@@ -44,7 +44,7 @@
         }
     }
 
-    function requireValidCsrfToken($redirectPath = '../index.php') {
+    function requireValidCsrfToken(string $redirectPath = '../index.php'): void {
         validateCsrfToken($redirectPath);
     }
 ?>

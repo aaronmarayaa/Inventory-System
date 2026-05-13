@@ -45,10 +45,9 @@
         }
 
         $selector = bin2hex(random_bytes(6));
-        $validator = random_bytes(32);
-
-        $cookieValue = $selector . ':' . bin2hex($validator);
-        $tokenHash = hash('sha256', bin2hex($validator));
+        $validator = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $validator);
+        $cookieValue = $selector . ':' . $validator;
         $expires = date('Y-m-d H:i:s', time() + REMEMBER_ME_SECONDS);
 
         $stmt = $conn->prepare('INSERT INTO user_session (user_id, selector, token_hash, expires) VALUES (?, ?, ?, ?)');
@@ -122,7 +121,8 @@
             return false;
         }
 
-        [$selector, $validator] = $parts;
+        $selector = $parts[0];
+        $validator = $parts[1];
 
         if (
             strlen($selector) !== 12 ||
@@ -163,12 +163,12 @@
             return false;
         }
 
-        $row = $result->fetch_assoc();
+        $user = $result->fetch_assoc();
         $stmt->close();
 
         $validatorHash = hash('sha256', $validator);
 
-        if (!hash_equals($row['token_hash'], $validatorHash)) {
+        if (!hash_equals($user['token_hash'], $validatorHash)) {
             $deleteStmt = $conn->prepare('DELETE FROM user_session WHERE selector = ?');
 
             if ($deleteStmt) {
@@ -181,12 +181,13 @@
             return false;
         }
 
-        if ($row['status'] !== 'ACTIVE') {
+        if ($user['status'] !== 'ACTIVE') {
+            deleteRememberMeToken($conn);
             clearRememberMeCookie();
             return false;
         }
 
-        setUserSession($row);
+        setUserSession($user);
         return true;
     }
 ?>

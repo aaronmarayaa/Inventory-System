@@ -4,24 +4,26 @@
     require_once __DIR__ . '/security/csrf.php';
     require_once __DIR__ . '/security/rememberMe.php';
 
-    if (empty($_SESSION['loginSuccess']) && !empty($_COOKIE['remember_me'])) {
-        require __DIR__ . '/lib/connection.php';
-
-        try {
-            loginFromRememberMeCookie($conn);
-        } catch (Throwable $exception) {
-            error_log('Remember me auto-login failed: ' . $exception->getMessage());
-            clearRememberMeCookie();
-        } finally {
-            if (isset($conn)) {
-                $conn->close();
-            }
-        }
-    }
-
     if (!empty($_SESSION['loginSuccess']) && $_SESSION['loginSuccess'] === true) {
         header('Location: pages/home.php');
         exit;
+    }
+
+    if (!empty($_COOKIE[REMEMBER_ME_COOKIE])) {
+        require __DIR__ . '/lib/connection.php';
+
+        if (loginFromRememberMeCookie($conn)) {
+            if (isset($conn)) {
+                $conn->close();
+            }
+
+            header('Location: pages/home.php');
+            exit;
+        }
+
+        if (isset($conn)) {
+            $conn->close();
+        }
     }
 
     function filter($data) {
@@ -39,6 +41,7 @@
         'inactive' => 'This account is inactive. Please contact the super admin.',
         'unauthorized' => 'Please log in first.',
         'forbidden' => 'You do not have permission to access that page.',
+        'invalid_request' => 'Invalid request. Please refresh the page and try again.',
     ];
 
     $flashMessage = '';

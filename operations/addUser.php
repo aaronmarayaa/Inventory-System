@@ -20,9 +20,14 @@
     $lastName = trim($_POST['last_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $confirmPassword = $_POST['confirm_password'] ?? '';
 
-    if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || trim($password) === '') {
+    if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || trim($password) === '' || trim($confirmPassword) === '') {
         redirectHome('error=invalid_user_input');
+    }
+
+    if ($password !== $confirmPassword) {
+        redirectHome('error=password_mismatch');
     }
 
     try {
@@ -40,7 +45,7 @@
             redirectHome('error=email_exists');
         }
 
-        $passwordForDatabase = $password;
+        $passwordForDatabase = password_hash($password, PASSWORD_DEFAULT);
         $role = 'REGULAR';
         $status = 'ACTIVE';
 
