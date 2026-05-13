@@ -7,15 +7,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-require_once '../security/csrf.php';
-requireValidCsrfToken('../pages/home.php?error=invalid_request');
 require '../lib/connection.php';
 
 function redirectHome(string $query): void {
     header('Location: ../pages/home.php?' . $query);
     exit();
 }
-
 
 $existingUserId = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
 
@@ -44,9 +41,14 @@ try {
     $lastName = trim($_POST['last_name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
+    $confirmPassword = $_POST['confirm_password'] ?? '';
 
-    if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || trim($password) === '') {
+    if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || trim($password) === '' || trim($confirmPassword) === '') {
         redirectHome('error=invalid_admin_input');
+    }
+
+    if ($password !== $confirmPassword) {
+        redirectHome('error=password_mismatch');
     }
 
     $checkStatement = $conn->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');

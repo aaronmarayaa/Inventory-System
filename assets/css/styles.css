@@ -899,8 +899,8 @@ nav {
 .flash-message {
     position: fixed;
     top: 1rem;
-    right: 1rem;
-    z-index: 1200;
+    left: 50%;
+    z-index: 1;
     width: min(380px, calc(100% - 2rem));
     margin: 0;
     padding: 0.95rem 1rem;
@@ -909,7 +909,7 @@ nav {
     font-weight: 800;
     line-height: 1.35;
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
     transition: opacity 0.35s ease, transform 0.35s ease;
 }
 

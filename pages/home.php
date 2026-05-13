@@ -1,6 +1,5 @@
 <?php
     require_once '../services/session.php';
-    require_once '../security/csrf.php';
     $currentRole = $_SESSION['role'];
 
     function filter($data) {
@@ -25,11 +24,6 @@
             'item_deleted' => 'Item deleted successfully.',
             'item_updated' => 'Item updated successfully.',
             'item_added' => 'Item added successfully.',
-            'item_archived' => 'Item archived successfully.',
-            'item_restored' => 'Archived item restored successfully.',
-            'user_added' => 'User account added successfully.',
-            'user_archived' => 'User account archived successfully.',
-            'user_password_reset' => 'User password has been reset.',
             'user_deleted' => 'User account deleted successfully.',
             'user_updated' => 'User account updated successfully.'
         ];
@@ -40,11 +34,10 @@
             'invalid_product' => 'Please select a valid product request.',
             'invalid_admin' => 'Please select a valid admin account.',
             'invalid_admin_input' => 'Please complete all admin fields correctly.',
+            'password_mismatch' => 'Password and confirm password do not match.',
             'email_exists' => 'That email is already registered.',
             'invalid_reset_password' => 'Please enter a valid new password.',
-            'password_mismatch' => 'Passwords do not match.',
             'invalid_user' => 'Please select a valid user account.',
-            'invalid_user_input' => 'Please complete all user fields correctly.',
             'invalid_item' => 'Please select a valid item.',
             'unauthorized_action' => 'You are not allowed to do that action.',
             'delete_failed' => 'Delete failed. Please try again.',
@@ -116,9 +109,8 @@
             </div>
 
             <div class="header-actions">
-                <button type="button" class="addButton" id="openAddAdminButton">Add Admin</button>
+                <button type="button" class="addButton" onclick="openAddAdminModal()">Add Admin</button>
                 <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
-                    <?= csrfInput(); ?>
                     <button type="submit" class="logoutButton">Logout</button>
                 </form>
             </div>
@@ -167,15 +159,14 @@
                         <div class="crud-actions management-actions">
                             <button
                                 type="button"
-                                class="btn btn-update reset-admin-password-button"
+                                class="btn btn-update"
                                 data-admin-id="<?= $adminId ?>"
                                 data-admin-name="<?= $adminName ?>"
-                                >
+                                onclick="openResetPasswordModal(this.dataset.adminId, this.dataset.adminName)">
                                 Reset Password
                             </button>
 
                             <form action="../operations/removeAdmin.php" method="post" data-confirm-title="Remove Admin" data-confirm-message="This admin account will be archived and will no longer have admin access." data-confirm-confirm-label="Remove Admin" data-confirm-danger="true">
-                                <?= csrfInput(); ?>
                                 <input type="hidden" name="id" value="<?= $adminId ?>">
                                 <button type="submit" class="btn btn-delete">Remove Admin</button>
                             </form>
@@ -225,7 +216,6 @@
 
                         <div class="crud-actions management-actions">
                             <form action="../operations/addAdmin.php" method="post" data-confirm-title="Add User as Admin" data-confirm-message="This regular user will be promoted and given admin access." data-confirm-confirm-label="Add as Admin">
-                                <?= csrfInput(); ?>
                                 <input type="hidden" name="user_id" value="<?= $regularId ?>">
                                 <button type="submit" class="btn btn-submit">Add as Admin</button>
                             </form>
@@ -245,11 +235,10 @@
                         <p class="modal-kicker">Admin account</p>
                         <h2 id="addAdminModalTitle">Add New Admin</h2>
                     </div>
-                    <button type="button" class="modal-close" data-close-modal="addAdminModal" aria-label="Close add admin modal">&times;</button>
+                    <button type="button" class="modal-close" onclick="closeAddAdminModal()" aria-label="Close add admin modal">&times;</button>
                 </div>
 
                 <form action="../operations/addAdmin.php" method="post" class="modal-form" data-confirm-title="Add New Admin" data-confirm-message="Create this new admin account?" data-confirm-confirm-label="Add Admin">
-                    <?= csrfInput(); ?>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="adminFirstName">First Name</label>
@@ -272,8 +261,13 @@
                         <input type="password" id="adminPassword" name="password" placeholder="Temporary password" required>
                     </div>
 
+                    <div class="form-group">
+                        <label for="adminConfirmPassword">Confirm Password</label>
+                        <input type="password" id="adminConfirmPassword" name="confirm_password" placeholder="Confirm temporary password" required>
+                    </div>
+
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-cancel" data-close-modal="addAdminModal">Cancel</button>
+                        <button type="button" class="btn btn-cancel" onclick="closeAddAdminModal()">Cancel</button>
                         <button type="submit" class="btn btn-submit">Add Admin</button>
                     </div>
                 </form>
@@ -289,39 +283,19 @@
                         <h2 id="resetPasswordModalTitle">Reset Password</h2>
                         <p class="created-by" id="resetPasswordAdminName"></p>
                     </div>
-                    <button type="button" class="modal-close" data-close-modal="resetPasswordModal" aria-label="Close reset password modal">&times;</button>
+                    <button type="button" class="modal-close" onclick="closeResetPasswordModal()" aria-label="Close reset password modal">&times;</button>
                 </div>
 
                 <form action="../operations/resetPassword.php" method="post" class="modal-form" data-confirm-title="Reset Password" data-confirm-message="This will replace the admin password with the new password you entered." data-confirm-confirm-label="Reset Password" data-confirm-danger="true">
-                    <?= csrfInput(); ?>
                     <input type="hidden" name="id" id="resetPasswordAdminId">
 
                     <div class="form-group">
                         <label for="newAdminPassword">New Password</label>
-                        <input
-                            type="password"
-                            id="newAdminPassword"
-                            name="new_password"
-                            placeholder="New password"
-                            required
-                            
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="confirmAdminPassword">Confirm Password</label>
-                        <input
-                            type="password"
-                            id="confirmAdminPassword"
-                            name="confirm_password"
-                            placeholder="Confirm password"
-                            required
-                            
-                        >
+                        <input type="password" id="newAdminPassword" name="new_password" placeholder="New password" required>
                     </div>
 
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-cancel" data-close-modal="resetPasswordModal">Cancel</button>
+                        <button type="button" class="btn btn-cancel" onclick="closeResetPasswordModal()">Cancel</button>
                         <button type="submit" class="btn btn-submit">Reset Password</button>
                     </div>
                 </form>
@@ -345,11 +319,8 @@
                     <h1>Welcome, <?= filter($firstName) ?></h1>
                 </div>
                 <div class="header-actions">
-                    <button type="button" class="addButton" id="openAdminAddItemButton">Add Item</button>
-                    <button type="button" class="addButton open-admin-add-user-button">Add User</button>
                     <span class="role-pill">ADMIN</span>
                     <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
-                        <?= csrfInput(); ?>
                         <button type="submit" class="logoutButton">Logout</button>
                     </form>
                 </div>
@@ -359,25 +330,22 @@
                 <p class="flash-message flash-<?= filter($messageType) ?>" role="status" aria-live="polite" data-auto-hide="3000"><?= filter($message) ?></p>
             <?php endif; ?>
 
-            <nav class="dashboard-nav admin-dashboard-nav">
-                <button type="button" class="tab active" data-admin-section="home">
+            <nav class="dashboard-nav">
+                <button type="button" class="tab active" onclick="showHome()">
                     <img src="../assets/img/icon/home.png" alt="" width="20">
                     Home
                 </button>
-                <button type="button" class="tab" data-admin-section="items">
+                <button type="button" class="tab" onclick="showItems()">
                     <img src="../assets/img/icon/chocolate.png" alt="" width="20">
                     Pending Items
                 </button>
-                <button type="button" class="tab" data-admin-section="users">
+                <button type="button" class="tab" onclick="showUsers()">
                     <img src="../assets/img/icon/user.png" alt="" width="20">
                     Users
                 </button>
-                <button type="button" class="tab" data-admin-section="archives">
-                    Archived Items
-                </button>
             </nav>
 
-            <!-- ADMIN HOME: grouped ACTIVE products and individual ACTIVE inventory records -->
+            <!-- ADMIN HOME: grouped ACTIVE products -->
             <div class="cards admin-section dashboard-panel" id="home">
                 <div class="section-title-row">
                     <div>
@@ -428,92 +396,10 @@
                         <p class="empty-message">No active chocolates found.</p>
                     <?php endif; ?>
                 </div>
-
-                <div class="section-title-row" style="margin-top: 24px;">
-                    <div>
-                        <h2>Item Records</h2>
-                        <p>View, update, or archive individual active inventory records.</p>
-                    </div>
-                    <span class="count-pill"><?= isset($activeInventoryItems) ? count($activeInventoryItems) : 0 ?> records</span>
-                </div>
-
-                <div class="dashboard-list">
-                    <?php if (isset($activeInventoryItems) && count($activeInventoryItems) > 0): ?>
-                        <?php foreach ($activeInventoryItems as $row):
-                            $inventoryId = filter($row['inventory_id'] ?? '');
-                            $chocolateId = filter($row['chocolate_id'] ?? '');
-                            $chocolateName = filter($row['chocolate_name'] ?? '');
-                            $image = filter($row['image_path'] ?? '');
-                            $quantity = filter($row['quantity'] ?? '');
-                            $createdAt = filter($row['created_at'] ?? '');
-                            $createdBy = trim(filter($row['first_name'] ?? '') . ' ' . filter($row['last_name'] ?? ''));
-                            $createdByEmail = filter($row['email'] ?? '');
-                            $createdByRole = filter($row['role'] ?? '');
-                        ?>
-                            <div class="inventory-card request-card" data-name="<?= filter(strtolower($chocolateName . ' ' . $createdBy . ' ' . $createdByEmail)) ?>">
-                                <div class="inventory-main">
-                                    <img src="<?= $image ?>" alt="<?= $chocolateName ?>" width="54" height="54" class="choco-image product-thumb">
-                                    <div class="inventory-info">
-                                        <p class="inventory-name"><?= $chocolateName ?></p>
-                                        <p class="created-by">Created by: <?= $createdBy ?><?= $createdByEmail !== '' ? ' · ' . $createdByEmail : '' ?></p>
-                                        <div class="inventory-tags">
-                                            <span class="status-badge status-active">ACTIVE</span>
-                                            <span><?= $createdByRole ?></span>
-                                            <span><?= $createdAt ?></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="inventory-stats request-actions-wrap">
-                                    <div class="stat-block">
-                                        <span>Qty</span>
-                                        <strong><?= $quantity ?></strong>
-                                    </div>
-
-                                    <div class="crud-actions management-actions">
-                                        <button
-                                            type="button"
-                                            class="btn btn-update admin-view-item-button"
-                                            data-inventory-id="<?= $inventoryId ?>"
-                                            data-chocolate-id="<?= $chocolateId ?>"
-                                            data-chocolate-name="<?= $chocolateName ?>"
-                                            data-quantity="<?= $quantity ?>"
-                                            data-created-by="<?= $createdBy ?>"
-                                            data-created-by-email="<?= $createdByEmail ?>"
-                                            data-created-by-role="<?= $createdByRole ?>"
-                                            data-created-at="<?= $createdAt ?>"
-                                            >
-                                            View
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            class="btn btn-update admin-update-item-button"
-                                            data-inventory-id="<?= $inventoryId ?>"
-                                            data-chocolate-id="<?= $chocolateId ?>"
-                                            data-chocolate-name="<?= $chocolateName ?>"
-                                            data-quantity="<?= $quantity ?>"
-                                            >
-                                            Update
-                                        </button>
-
-                                        <form action="../operations/deleteProduct.php" method="post" data-confirm-title="Archive Item" data-confirm-message="This active item will be moved to archived items." data-confirm-confirm-label="Archive" data-confirm-danger="true">
-                                            <?= csrfInput(); ?>
-                                            <input type="hidden" name="id" value="<?= $inventoryId ?>">
-                                            <button type="submit" class="btn btn-delete">Archive</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="empty-message">No active item records found.</p>
-                    <?php endif; ?>
-                </div>
             </div>
 
             <!-- ADMIN ITEMS: pending rows stay separate -->
-            <div class="admin-items-panel admin-section dashboard-panel" id="items" style="display: none;">
+            <div class="items admin-section dashboard-panel" id="items" style="display: none;">
                 <div class="section-title-row">
                     <div>
                         <h2>Pending Items</h2>
@@ -555,14 +441,9 @@
                                     </div>
 
                                     <div class="crud-actions management-actions">
-                                        <form action="../operations/approveProduct.php" method="post" data-confirm-title="Approve Request" data-confirm-message="Approve this pending product request? It will be added to the active inventory total." data-confirm-confirm-label="Approve">
-                                            <?= csrfInput(); ?>
-                                            <input type="hidden" name="id" value="<?= $inventoryId ?>">
-                                            <button type="submit" class="btn btn-submit">Approve</button>
-                                        </form>
+                                        <a class="btn btn-update requires-confirm" href="../pages/updateItem.php?id=<?= $inventoryId ?>" data-confirm-title="Approve Request" data-confirm-message="Approve this pending product request?" data-confirm-confirm-label="Approve">Approve</a>
 
-                                        <form action="../operations/deleteProduct.php" method="post" data-confirm-title="Reject Request" data-confirm-message="This pending product request will be removed from the pending list." data-confirm-confirm-label="Reject" data-confirm-danger="true">
-                                            <?= csrfInput(); ?>
+                                        <form action="../operations/deleteItem.php" method="post" data-confirm-title="Reject Request" data-confirm-message="This pending product request will be rejected." data-confirm-confirm-label="Reject" data-confirm-danger="true">
                                             <input type="hidden" name="id" value="<?= $inventoryId ?>">
                                             <button type="submit" class="btn btn-delete">Reject</button>
                                         </form>
@@ -577,13 +458,13 @@
             </div>
 
             <!-- ADMIN USERS -->
-            <div class="admin-users-panel admin-section dashboard-panel" id="users" style="display: none;">
+            <div class="users admin-section dashboard-panel" id="users" style="display: none;">
                 <div class="section-title-row">
                     <div>
                         <h2>Regular Users</h2>
-                        <p>Add users, archive users, or reset regular user passwords.</p>
+                        <p>Manage regular user accounts.</p>
                     </div>
-                    <button type="button" class="addButton open-admin-add-user-button">Add User</button>
+                    <span class="count-pill"><?= isset($regularUsers) ? count($regularUsers) : 0 ?> users</span>
                 </div>
 
                 <div class="dashboard-list">
@@ -616,19 +497,11 @@
                                 </div>
 
                                 <div class="crud-actions management-actions">
-                                    <button
-                                        type="button"
-                                        class="btn btn-update admin-reset-user-password-button"
-                                        data-user-id="<?= $regularUserId ?>"
-                                        data-user-name="<?= $userName ?>"
-                                        >
-                                        Reset Password
-                                    </button>
+                                    <a class="btn btn-update" href="../pages/updateUser.php?id=<?= $regularUserId ?>">Update</a>
 
-                                    <form action="../operations/deleteUser.php" method="post" data-confirm-title="Archive User" data-confirm-message="This regular user account will be archived and can no longer log in." data-confirm-confirm-label="Archive User" data-confirm-danger="true">
-                                        <?= csrfInput(); ?>
+                                    <form action="../operations/deleteUser.php" method="post" data-confirm-title="Delete User" data-confirm-message="This user account will be deleted or archived depending on your operation logic." data-confirm-confirm-label="Delete" data-confirm-danger="true">
                                         <input type="hidden" name="id" value="<?= $regularUserId ?>">
-                                        <button type="submit" class="btn btn-delete">Archive User</button>
+                                        <button type="submit" class="btn btn-delete">Delete</button>
                                     </form>
                                 </div>
                             </div>
@@ -638,277 +511,6 @@
                     <?php endif; ?>
                 </div>
             </div>
-
-            <!-- ADMIN ARCHIVED ITEMS -->
-            <div class="archives admin-section dashboard-panel" id="archives" style="display: none;">
-                <div class="section-title-row">
-                    <div>
-                        <h2>Archived Items</h2>
-                        <p>Restore archived inventory records back to active inventory.</p>
-                    </div>
-                    <span class="count-pill"><?= isset($archivedItems) ? count($archivedItems) : 0 ?> archived</span>
-                </div>
-
-                <div class="dashboard-list">
-                    <?php if (isset($archivedItems) && count($archivedItems) > 0): ?>
-                        <?php foreach ($archivedItems as $row):
-                            $inventoryId = filter($row['inventory_id'] ?? '');
-                            $chocolateName = filter($row['chocolate_name'] ?? '');
-                            $image = filter($row['image_path'] ?? '');
-                            $quantity = filter($row['quantity'] ?? '');
-                            $createdAt = filter($row['created_at'] ?? '');
-                            $createdBy = trim(filter($row['first_name'] ?? '') . ' ' . filter($row['last_name'] ?? ''));
-                            $createdByEmail = filter($row['email'] ?? '');
-                            $createdByRole = filter($row['role'] ?? '');
-                        ?>
-                            <div class="inventory-card request-card" data-name="<?= filter(strtolower($chocolateName . ' ' . $createdBy . ' ' . $createdByEmail)) ?>">
-                                <div class="inventory-main">
-                                    <img src="<?= $image ?>" alt="<?= $chocolateName ?>" width="54" height="54" class="choco-image product-thumb">
-                                    <div class="inventory-info">
-                                        <p class="inventory-name"><?= $chocolateName ?></p>
-                                        <p class="created-by">Created by: <?= $createdBy ?><?= $createdByEmail !== '' ? ' · ' . $createdByEmail : '' ?></p>
-                                        <div class="inventory-tags">
-                                            <span class="status-badge status-archived">ARCHIVED</span>
-                                            <span><?= $createdByRole ?></span>
-                                            <span><?= $createdAt ?></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="inventory-stats request-actions-wrap">
-                                    <div class="stat-block">
-                                        <span>Qty</span>
-                                        <strong><?= $quantity ?></strong>
-                                    </div>
-
-                                    <form action="../operations/restoreProduct.php" method="post" class="crud-actions management-actions" data-confirm-title="Restore Item" data-confirm-message="Restore this archived item to active inventory?" data-confirm-confirm-label="Restore">
-                                        <?= csrfInput(); ?>
-                                        <input type="hidden" name="id" value="<?= $inventoryId ?>">
-                                        <button type="submit" class="btn btn-submit">Restore</button>
-                                    </form>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <p class="empty-message">No archived items found.</p>
-                    <?php endif; ?>
-                </div>
-            </div>
-
-            <!-- Add Item Modal -->
-            <section class="modal-overlay" id="adminAddItemModal" aria-hidden="true">
-                <div class="addItemModal" role="dialog" aria-modal="true" aria-labelledby="adminAddItemModalTitle">
-                    <div class="modal-header">
-                        <div>
-                            <p class="modal-kicker">Admin operation</p>
-                            <h2 id="adminAddItemModalTitle">Add Item</h2>
-                        </div>
-                        <button type="button" class="modal-close" data-close-modal="adminAddItemModal" aria-label="Close add item modal">&times;</button>
-                    </div>
-
-                    <form action="../operations/addProduct.php" method="post" class="modal-form" data-confirm-title="Add Item" data-confirm-message="Add this item directly to active inventory?" data-confirm-confirm-label="Add Item">
-                        <?= csrfInput(); ?>
-                        <div class="form-group">
-                            <label for="adminAddChocolateItem">Chocolate</label>
-                            <select name="chocolateItem" id="adminAddChocolateItem" required>
-                                <option value="" disabled selected>Select chocolate</option>
-                                <?php foreach ($chocolateOptions as $chocolate):
-                                    $optionId = filter($chocolate['id'] ?? '');
-                                    $optionName = filter($chocolate['chocolate_name'] ?? '');
-                                ?>
-                                    <option value="<?= $optionId ?>"><?= $optionName ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="adminAddItemQuantity">Quantity</label>
-                            <input type="number" id="adminAddItemQuantity" name="quantity" min="1" placeholder="Enter quantity" required>
-                        </div>
-
-                        <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" data-close-modal="adminAddItemModal">Cancel</button>
-                            <button type="submit" class="btn btn-submit">Add Item</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- Update Item Modal -->
-            <section class="modal-overlay" id="adminUpdateItemModal" aria-hidden="true">
-                <div class="addItemModal" role="dialog" aria-modal="true" aria-labelledby="adminUpdateItemModalTitle">
-                    <div class="modal-header">
-                        <div>
-                            <p class="modal-kicker">Admin operation</p>
-                            <h2 id="adminUpdateItemModalTitle">Update Item</h2>
-                            <p class="created-by" id="adminUpdateItemName"></p>
-                        </div>
-                        <button type="button" class="modal-close" data-close-modal="adminUpdateItemModal" aria-label="Close update item modal">&times;</button>
-                    </div>
-
-                    <form action="../operations/updateProduct.php" method="post" class="modal-form" data-confirm-title="Update Item" data-confirm-message="Save changes to this active inventory item?" data-confirm-confirm-label="Save Changes">
-                        <?= csrfInput(); ?>
-                        <input type="hidden" name="id" id="adminUpdateItemId">
-
-                        <div class="form-group">
-                            <label for="adminUpdateChocolateItem">Chocolate</label>
-                            <select name="chocolateItem" id="adminUpdateChocolateItem" required>
-                                <?php foreach ($chocolateOptions as $chocolate):
-                                    $optionId = filter($chocolate['id'] ?? '');
-                                    $optionName = filter($chocolate['chocolate_name'] ?? '');
-                                ?>
-                                    <option value="<?= $optionId ?>"><?= $optionName ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="adminUpdateItemQuantity">Quantity</label>
-                            <input type="number" id="adminUpdateItemQuantity" name="quantity" min="1" placeholder="Enter quantity" required>
-                        </div>
-
-                        <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" data-close-modal="adminUpdateItemModal">Cancel</button>
-                            <button type="submit" class="btn btn-submit">Save Changes</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- View Item Modal -->
-            <section class="modal-overlay" id="adminViewItemModal" aria-hidden="true">
-                <div class="addItemModal" role="dialog" aria-modal="true" aria-labelledby="adminViewItemModalTitle">
-                    <div class="modal-header">
-                        <div>
-                            <p class="modal-kicker">Item details</p>
-                            <h2 id="adminViewItemModalTitle">View Item</h2>
-                        </div>
-                        <button type="button" class="modal-close" data-close-modal="adminViewItemModal" aria-label="Close view item modal">&times;</button>
-                    </div>
-
-                    <div class="confirm-body">
-                        <div class="confirm-icon" aria-hidden="true">i</div>
-                        <div>
-                            <p class="confirm-title" id="adminViewItemName">Chocolate item</p>
-                            <p class="confirm-text" id="adminViewItemDetails">Item details will appear here.</p>
-                        </div>
-                    </div>
-
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-submit" data-close-modal="adminViewItemModal">Close</button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Add User Modal -->
-            <section class="modal-overlay" id="adminAddUserModal" aria-hidden="true">
-                <div class="addItemModal" role="dialog" aria-modal="true" aria-labelledby="adminAddUserModalTitle">
-                    <div class="modal-header">
-                        <div>
-                            <p class="modal-kicker">User account</p>
-                            <h2 id="adminAddUserModalTitle">Add User</h2>
-                        </div>
-                        <button type="button" class="modal-close" data-close-modal="adminAddUserModal" aria-label="Close add user modal">&times;</button>
-                    </div>
-
-                    <form action="../operations/addUser.php" method="post" class="modal-form" data-confirm-title="Add User" data-confirm-message="Create this regular user account?" data-confirm-confirm-label="Add User">
-                        <?= csrfInput(); ?>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="adminUserFirstName">First Name</label>
-                                <input type="text" id="adminUserFirstName" name="first_name" placeholder="First name" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="adminUserLastName">Last Name</label>
-                                <input type="text" id="adminUserLastName" name="last_name" placeholder="Last name" required>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="adminUserEmail">Email</label>
-                            <input type="email" id="adminUserEmail" name="email" placeholder="user@example.com" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="adminUserPassword">Password</label>
-                            <input
-                                type="password"
-                                id="adminUserPassword"
-                                name="password"
-                                placeholder="Temporary password"
-                                required
-                                
-                            >
-                        </div>
-
-                        <div class="form-group">
-                            <label for="adminUserConfirmPassword">Confirm Password</label>
-                            <input
-                                type="password"
-                                id="adminUserConfirmPassword"
-                                name="confirm_password"
-                                placeholder="Confirm password"
-                                required
-                                
-                            >
-                        </div>
-
-                        <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" data-close-modal="adminAddUserModal">Cancel</button>
-                            <button type="submit" class="btn btn-submit">Add User</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- Reset User Password Modal -->
-            <section class="modal-overlay" id="adminResetUserPasswordModal" aria-hidden="true">
-                <div class="addItemModal" role="dialog" aria-modal="true" aria-labelledby="adminResetUserPasswordModalTitle">
-                    <div class="modal-header">
-                        <div>
-                            <p class="modal-kicker">User security</p>
-                            <h2 id="adminResetUserPasswordModalTitle">Reset User Password</h2>
-                            <p class="created-by" id="adminResetUserPasswordName"></p>
-                        </div>
-                        <button type="button" class="modal-close" data-close-modal="adminResetUserPasswordModal" aria-label="Close reset user password modal">&times;</button>
-                    </div>
-
-                    <form action="../operations/resetPassword.php" method="post" class="modal-form" data-confirm-title="Reset User Password" data-confirm-message="This will replace the regular user's password." data-confirm-confirm-label="Reset Password" data-confirm-danger="true">
-                        <?= csrfInput(); ?>
-                        <input type="hidden" name="id" id="adminResetUserPasswordId">
-
-                        <div class="form-group">
-                            <label for="adminNewUserPassword">New Password</label>
-                            <input
-                                type="password"
-                                id="adminNewUserPassword"
-                                name="new_password"
-                                placeholder="New password"
-                                required
-                                
-                            >
-                        </div>
-
-                        <div class="form-group">
-                            <label for="adminConfirmUserPassword">Confirm Password</label>
-                            <input
-                                type="password"
-                                id="adminConfirmUserPassword"
-                                name="confirm_password"
-                                placeholder="Confirm password"
-                                required
-                                
-                            >
-                        </div>
-
-                        <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" data-close-modal="adminResetUserPasswordModal">Cancel</button>
-                            <button type="submit" class="btn btn-submit">Reset Password</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
         </div>
     <?php endif; ?>
 </section>
@@ -928,9 +530,8 @@
                     <h1>Product</h1>
                 </div>
                 <div class="header-actions">
-                    <button type="button" class="addButton" id="openAddProductButton">Add Product</button>
+                    <button type="button" class="addButton" onclick="openAddProductModal()">Add Product</button>
                     <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
-                        <?= csrfInput(); ?>
                         <button type="submit" class="logoutButton">Logout</button>
                     </form>
                 </div>
@@ -943,7 +544,7 @@
                         placeholder="Search a Chocolate"
                         class="search-bar"
                         id="searchInput"
-                        >
+                        oninput="filterChocolates()">
                 </div>
             </div>
 
@@ -956,7 +557,7 @@
                     type="button"
                     class="regular-tab-btn active"
                     id="regularActiveTab"
-                    data-regular-tab="active"
+                    onclick="showRegularActive()"
                     role="tab"
                     aria-controls="regularActivePanel"
                     aria-selected="true">
@@ -968,7 +569,7 @@
                     type="button"
                     class="regular-tab-btn"
                     id="regularPendingTab"
-                    data-regular-tab="pending"
+                    onclick="showRegularPending()"
                     role="tab"
                     aria-controls="regularPendingPanel"
                     aria-selected="false">
@@ -1037,7 +638,7 @@
                 <div class="section-title-row">
                     <div>
                         <h2>My Pending Requests</h2>
-                        <p>Your added products wait here until an admin approves them.</p>
+                        <p>You can update or delete only your own pending requests.</p>
                     </div>
                     <span class="count-pill"><?= isset($pendingProducts) ? count($pendingProducts) : 0 ?> pending</span>
                 </div>
@@ -1045,6 +646,8 @@
                 <div class="dashboard-list pending-list">
                     <?php if (isset($pendingProducts) && count($pendingProducts) > 0): ?>
                         <?php foreach ($pendingProducts as $row):
+                            $inventoryId = filter($row['inventory_id'] ?? '');
+                            $currentChocolateId = filter($row['chocolate_id'] ?? '');
                             $chocolateName = filter($row['chocolate_name'] ?? '');
                             $image = filter($row['image_path'] ?? '');
                             $quantity = filter($row['quantity'] ?? '');
@@ -1069,8 +672,22 @@
                                         <strong><?= $quantity ?></strong>
                                     </div>
 
-                                    <div class="inventory-tags">
-                                        <span>Admin approval required</span>
+                                    <div class="crud-actions management-actions">
+                                        <button
+                                            type="button"
+                                            class="btn btn-update"
+                                            data-inventory-id="<?= $inventoryId ?>"
+                                            data-chocolate-id="<?= $currentChocolateId ?>"
+                                            data-quantity="<?= $quantity ?>"
+                                            data-chocolate-name="<?= $chocolateName ?>"
+                                            onclick="openUpdateProductModalFromButton(this)">
+                                            Update
+                                        </button>
+
+                                        <form action="../operations/deleteProduct.php" method="post" data-confirm-title="Delete Pending Request" data-confirm-message="This pending product request will be deleted." data-confirm-confirm-label="Delete" data-confirm-danger="true">
+                                            <input type="hidden" name="id" value="<?= $inventoryId ?>">
+                                            <button type="submit" class="btn btn-delete">Delete</button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -1089,11 +706,10 @@
                             <p class="modal-kicker">Product request</p>
                             <h2 id="addProductModalTitle">Add Product</h2>
                         </div>
-                        <button type="button" class="modal-close" data-close-modal="addProductModal" aria-label="Close add product modal">&times;</button>
+                        <button type="button" class="modal-close" onclick="closeAddProductModal()" aria-label="Close add product modal">&times;</button>
                     </div>
 
                     <form action="../operations/addProduct.php" method="post" class="modal-form" data-confirm-title="Submit Product Request" data-confirm-message="Submit this product request for admin approval?" data-confirm-confirm-label="Submit Request">
-                        <?= csrfInput(); ?>
                         <div class="form-group">
                             <label for="chocolateItem">Chocolate</label>
                             <select name="chocolateItem" id="chocolateItem" required>
@@ -1113,13 +729,52 @@
                         </div>
 
                         <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" data-close-modal="addProductModal">Cancel</button>
+                            <button type="button" class="btn btn-cancel" onclick="closeAddProductModal()">Cancel</button>
                             <button type="submit" class="btn btn-submit">Submit Request</button>
                         </div>
                     </form>
                 </div>
             </section>
 
+            <!-- Update Pending Product Modal -->
+            <section class="modal-overlay" id="updateProductModal" aria-hidden="true">
+                <div class="addItemModal" role="dialog" aria-modal="true" aria-labelledby="updateProductModalTitle">
+                    <div class="modal-header">
+                        <div>
+                            <p class="modal-kicker">Pending request</p>
+                            <h2 id="updateProductModalTitle">Update Product Request</h2>
+                            <p class="created-by" id="updateProductName"></p>
+                        </div>
+                        <button type="button" class="modal-close" onclick="closeUpdateProductModal()" aria-label="Close update product modal">&times;</button>
+                    </div>
+
+                    <form action="../operations/updateProduct.php" method="post" class="modal-form" data-confirm-title="Update Product Request" data-confirm-message="Save the changes to this pending product request?" data-confirm-confirm-label="Save Changes">
+                        <input type="hidden" name="id" id="updateProductId">
+
+                        <div class="form-group">
+                            <label for="updateChocolateItem">Chocolate</label>
+                            <select name="chocolateItem" id="updateChocolateItem" required>
+                                <?php foreach ($chocolateOptions as $chocolate):
+                                    $optionId = filter($chocolate['id'] ?? '');
+                                    $optionName = filter($chocolate['chocolate_name'] ?? '');
+                                ?>
+                                    <option value="<?= $optionId ?>"><?= $optionName ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="updateChocolateQuantity">Quantity</label>
+                            <input type="number" id="updateChocolateQuantity" name="quantity" min="1" placeholder="Enter quantity" required>
+                        </div>
+
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-cancel" onclick="closeUpdateProductModal()">Cancel</button>
+                            <button type="submit" class="btn btn-submit">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
         </div>
     <?php endif; ?>
 </section>
@@ -1133,7 +788,7 @@
                 <p class="modal-kicker" id="confirmActionKicker">Confirmation</p>
                 <h2 id="confirmActionTitle">Confirm Action</h2>
             </div>
-            <button type="button" class="modal-close" data-close-modal="confirmActionModal" aria-label="Close confirmation modal">&times;</button>
+            <button type="button" class="modal-close" onclick="closeConfirmActionModal()" aria-label="Close confirmation modal">&times;</button>
         </div>
 
         <div class="confirm-body">
@@ -1145,12 +800,11 @@
         </div>
 
         <div class="modal-actions confirmation-actions">
-            <button type="button" class="btn btn-cancel" data-close-modal="confirmActionModal">Cancel</button>
-            <button type="button" class="btn btn-submit" id="confirmActionButton" >Confirm</button>
+            <button type="button" class="btn btn-cancel" onclick="closeConfirmActionModal()">Cancel</button>
+            <button type="button" class="btn btn-submit" id="confirmActionButton" onclick="confirmPendingAction()">Confirm</button>
         </div>
     </div>
 </section>
-
 
 <script src="../assets/js/script.js?<?php echo time(); ?>"></script>
 </body>
