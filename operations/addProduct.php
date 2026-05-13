@@ -1,24 +1,28 @@
 <?php
     require_once '../services/authorize.php';
-    authorize(['REGULAR']);
+    authorize(['REGULAR', 'ADMIN']);
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         header('Location: ../exceptions/forbidden.php');
         exit();
     }
 
-require_once '../security/csrf.php';
-requireValidCsrfToken('../pages/home.php?error=invalid_request');
+    require_once '../security/csrf.php';
+    requireValidCsrfToken('../pages/home.php?error=invalid_request');
+
     $userId = (int) $_SESSION['id'];
+    $currentRole = $_SESSION['role'] ?? '';
     $chocolateId = filter_input(INPUT_POST, 'chocolateItem', FILTER_VALIDATE_INT);
-    $chocolateQuantity = filter_input(INPUT_POST, 'chocolateQuantity', FILTER_VALIDATE_INT);
+
+    $quantityInput = $_POST['chocolateQuantity'] ?? ($_POST['quantity'] ?? null);
+    $quantity = filter_var($quantityInput, FILTER_VALIDATE_INT);
 
     if ($chocolateId === false || $chocolateId === null || $chocolateId <= 0) {
         header('Location: ../pages/home.php?error=invalid_chocolate');
         exit();
     }
 
-    if ($chocolateQuantity === false || $chocolateQuantity === null || $chocolateQuantity <= 0) {
+    if ($quantity === false || $quantity === null || $quantity <= 0) {
         header('Location: ../pages/home.php?error=invalid_quantity');
         exit();
     }
@@ -41,11 +45,7 @@ requireValidCsrfToken('../pages/home.php?error=invalid_request');
             exit();
         }
 
-        $checkStatement->close();
-
-        // Keep each request as its own row.
-        // It will be included in the grouped total only after an admin approves it.
-        $status = 'PENDING';
+        $status = $currentRole === 'ADMIN' ? 'ACTIVE' : 'PENDING';
 
         $insertStatement = $conn->prepare('INSERT INTO chocolate_inventory
             (chocolate_id, quantity, status, created_by)
@@ -55,19 +55,24 @@ requireValidCsrfToken('../pages/home.php?error=invalid_request');
             throw new Exception('Prepare product insert failed: ' . $conn->error);
         }
 
-        $insertStatement->bind_param('iisi', $chocolateId, $chocolateQuantity, $status, $userId);
+        $insertStatement->bind_param('iisi', $chocolateId, $quantity, $status, $userId);
 
         if (!$insertStatement->execute()) {
             throw new Exception('Product insert failed: ' . $insertStatement->error);
         }
 
-        header('Location: ../pages/home.php?success=product_pending');
+        $success = $currentRole === 'ADMIN' ? 'item_added' : 'product_pending';
+        header('Location: ../pages/home.php?success=' . $success);
         exit();
     } catch (Exception $e) {
-        error_log('Regular add product failed: ' . $e->getMessage());
+        error_log('Add product failed: ' . $e->getMessage());
         header('Location: ../exceptions/internalServerError.php');
         exit();
     } finally {
+        if (isset($checkStatement)) {
+            $checkStatement->close();
+        }
+
         if (isset($insertStatement)) {
             $insertStatement->close();
         }

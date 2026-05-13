@@ -1,15 +1,15 @@
 <?php
     require_once '../services/authorize.php';
-    authorize(['REGULAR']);
+    authorize(['ADMIN']);
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         header('Location: ../exceptions/forbidden.php');
         exit();
     }
 
-require_once '../security/csrf.php';
-requireValidCsrfToken('../pages/home.php?error=invalid_request');
-    $userId = (int) $_SESSION['id'];
+    require_once '../security/csrf.php';
+    requireValidCsrfToken('../pages/home.php?error=invalid_request');
+
     $inventoryId = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
 
     if ($inventoryId === false || $inventoryId === null || $inventoryId <= 0) {
@@ -20,35 +20,63 @@ requireValidCsrfToken('../pages/home.php?error=invalid_request');
     require '../lib/connection.php';
 
     try {
-        // Soft delete only the logged-in user's own PENDING request.
-        // This keeps approved inventory/history intact.
-        $status = 'ARCHIVED';
+        $checkStatement = $conn->prepare("SELECT status FROM chocolate_inventory
+            WHERE id = ?
+              AND status IN ('ACTIVE', 'PENDING')
+            LIMIT 1");
 
-        $deleteStatement = $conn->prepare("UPDATE chocolate_inventory
+        if (!$checkStatement) {
+            throw new Exception('Prepare admin product check failed: ' . $conn->error);
+        }
+
+        $checkStatement->bind_param('i', $inventoryId);
+        $checkStatement->execute();
+        $checkResult = $checkStatement->get_result();
+
+        if ($checkResult->num_rows === 0) {
+            header('Location: ../pages/home.php?error=invalid_product');
+            exit();
+        }
+
+        $row = $checkResult->fetch_assoc();
+        $oldStatus = $row['status'] ?? '';
+        $newStatus = 'ARCHIVED';
+
+        $archiveStatement = $conn->prepare("UPDATE chocolate_inventory
             SET status = ?
             WHERE id = ?
-              AND created_by = ?
-              AND status = 'PENDING'");
+              AND status IN ('ACTIVE', 'PENDING')");
 
-        if (!$deleteStatement) {
-            throw new Exception('Prepare product delete failed: ' . $conn->error);
+        if (!$archiveStatement) {
+            throw new Exception('Prepare admin product archive/reject failed: ' . $conn->error);
         }
 
-        $deleteStatement->bind_param('sii', $status, $inventoryId, $userId);
+        $archiveStatement->bind_param('si', $newStatus, $inventoryId);
 
-        if (!$deleteStatement->execute()) {
-            throw new Exception('Product delete failed: ' . $deleteStatement->error);
+        if (!$archiveStatement->execute()) {
+            throw new Exception('Product archive/reject failed: ' . $archiveStatement->error);
         }
 
-        header('Location: ../pages/home.php?success=product_deleted');
+        if ($archiveStatement->affected_rows === 0) {
+            header('Location: ../pages/home.php?error=invalid_product');
+            exit();
+        }
+
+        $success = $oldStatus === 'PENDING' ? 'item_rejected' : 'item_archived';
+
+        header('Location: ../pages/home.php?success=' . $success);
         exit();
     } catch (Exception $e) {
-        error_log('Regular delete product failed: ' . $e->getMessage());
+        error_log('Admin archive/reject product failed: ' . $e->getMessage());
         header('Location: ../exceptions/internalServerError.php');
         exit();
     } finally {
-        if (isset($deleteStatement)) {
-            $deleteStatement->close();
+        if (isset($checkStatement)) {
+            $checkStatement->close();
+        }
+
+        if (isset($archiveStatement)) {
+            $archiveStatement->close();
         }
 
         if (isset($conn)) {

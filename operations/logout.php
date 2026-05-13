@@ -1,20 +1,32 @@
 <?php
     session_start();
 
-    require_once __DIR__ . '/../security/rememberMe.php';
-    require __DIR__ . '/../lib/connection.php';
+    require_once __DIR__ . '/../security/csrf.php';
+    requireValidCsrfToken('../index.php?error=invalid_request');
 
-    try {
-        deleteRememberMeToken($conn);
-    } catch (Throwable $exception) {
-        error_log('Remember me logout cleanup failed: ' . $exception->getMessage());
-    } finally {
-        if (isset($conn)) {
-            $conn->close();
+    $rememberMePath = __DIR__ . '/../security/rememberMe.php';
+    $connectionPath = __DIR__ . '/../lib/connection.php';
+
+    if (file_exists($rememberMePath) && file_exists($connectionPath)) {
+        require_once $rememberMePath;
+        require $connectionPath;
+
+        try {
+            if (function_exists('deleteRememberMeToken')) {
+                deleteRememberMeToken($conn);
+            }
+        } catch (Throwable $exception) {
+            error_log('Remember me logout cleanup failed: ' . $exception->getMessage());
+        } finally {
+            if (isset($conn)) {
+                $conn->close();
+            }
+        }
+
+        if (function_exists('clearRememberMeCookie')) {
+            clearRememberMeCookie();
         }
     }
-
-    clearRememberMeCookie();
 
     $_SESSION = [];
 

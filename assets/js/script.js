@@ -69,6 +69,7 @@ function openModal(modalId) {
 
     if (modal) {
         modal.classList.add('show');
+        modal.classList.add('active');
         modal.setAttribute('aria-hidden', 'false');
     }
 }
@@ -78,6 +79,7 @@ function closeModal(modalId) {
 
     if (modal) {
         modal.classList.remove('show');
+        modal.classList.remove('active');
         modal.setAttribute('aria-hidden', 'true');
     }
 
@@ -89,6 +91,7 @@ function closeModal(modalId) {
 function closeAllModals() {
     document.querySelectorAll('.modal-overlay.show').forEach((modal) => {
         modal.classList.remove('show');
+        modal.classList.remove('active');
         modal.setAttribute('aria-hidden', 'true');
     });
 
