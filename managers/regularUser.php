@@ -12,9 +12,6 @@
     $chocolateOptions = [];
 
     try {
-        // Main product list: combine all ACTIVE inventory rows by chocolate.
-        // Example: if Mark adds 75 Ritter Sport and Alice's approved request adds 20,
-        // the website shows one Ritter Sport card with Quantity: 95.
         $activeProductsStatement = "SELECT
                 c.id AS chocolate_id,
                 c.chocolate_name,
@@ -44,7 +41,6 @@
             $activeProducts[] = $row;
         }
 
-        // Keep each regular user's pending request separate for tracking/update/delete.
         $pendingProductsStatement = $conn->prepare("SELECT
                 ci.id AS inventory_id,
                 ci.quantity,
@@ -74,7 +70,6 @@
 
         $pendingProductsStatement->close();
 
-        // Dropdown source for add/update request forms.
         $chocolateOptionsResult = $conn->query("SELECT id, chocolate_name FROM chocolate_items ORDER BY chocolate_name ASC");
 
         if (!$chocolateOptionsResult) {
