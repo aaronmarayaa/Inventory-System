@@ -39,22 +39,47 @@
         }
 
         $row = $checkResult->fetch_assoc();
-        $oldStatus = $row['status'] ?? '';
+        $oldStatus = strtoupper($row['status'] ?? '');
+
+        if ($oldStatus === 'PENDING') {
+            $deleteStatement = $conn->prepare("DELETE FROM chocolate_inventory
+                WHERE id = ?
+                  AND UPPER(status) = 'PENDING'");
+
+            if (!$deleteStatement) {
+                throw new Exception('Prepare pending product delete failed: ' . $conn->error);
+            }
+
+            $deleteStatement->bind_param('i', $inventoryId);
+
+            if (!$deleteStatement->execute()) {
+                throw new Exception('Pending product delete failed: ' . $deleteStatement->error);
+            }
+
+            if ($deleteStatement->affected_rows === 0) {
+                header('Location: ../pages/home.php?error=invalid_product');
+                exit();
+            }
+
+            header('Location: ../pages/home.php?success=item_rejected');
+            exit();
+        }
+
         $newStatus = 'ARCHIVED';
 
         $archiveStatement = $conn->prepare("UPDATE chocolate_inventory
             SET status = ?
             WHERE id = ?
-              AND status IN ('ACTIVE', 'PENDING')");
+              AND UPPER(status) = 'ACTIVE'");
 
         if (!$archiveStatement) {
-            throw new Exception('Prepare admin product archive/reject failed: ' . $conn->error);
+            throw new Exception('Prepare admin product archive failed: ' . $conn->error);
         }
 
         $archiveStatement->bind_param('si', $newStatus, $inventoryId);
 
         if (!$archiveStatement->execute()) {
-            throw new Exception('Product archive/reject failed: ' . $archiveStatement->error);
+            throw new Exception('Product archive failed: ' . $archiveStatement->error);
         }
 
         if ($archiveStatement->affected_rows === 0) {
@@ -62,9 +87,7 @@
             exit();
         }
 
-        $success = $oldStatus === 'PENDING' ? 'item_rejected' : 'item_archived';
-
-        header('Location: ../pages/home.php?success=' . $success);
+        header('Location: ../pages/home.php?success=item_archived');
         exit();
     } catch (Exception $e) {
         error_log('Admin archive/reject product failed: ' . $e->getMessage());
@@ -73,6 +96,10 @@
     } finally {
         if (isset($checkStatement)) {
             $checkStatement->close();
+        }
+
+        if (isset($deleteStatement)) {
+            $deleteStatement->close();
         }
 
         if (isset($archiveStatement)) {

@@ -42,6 +42,7 @@
             'invalid_admin_input' => 'Please complete all admin fields correctly.',
             'email_exists' => 'That email is already registered.',
             'invalid_reset_password' => 'Please enter a valid new password.',
+            'password_mismatch' => 'Passwords do not match.',
             'invalid_user' => 'Please select a valid user account.',
             'invalid_user_input' => 'Please complete all user fields correctly.',
             'invalid_item' => 'Please select a valid item.',
@@ -115,7 +116,7 @@
             </div>
 
             <div class="header-actions">
-                <button type="button" class="addButton" onclick="openAddAdminModal()">Add Admin</button>
+                <button type="button" class="addButton" id="openAddAdminButton">Add Admin</button>
                 <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
                     <?= csrfInput(); ?>
                     <button type="submit" class="logoutButton">Logout</button>
@@ -166,10 +167,10 @@
                         <div class="crud-actions management-actions">
                             <button
                                 type="button"
-                                class="btn btn-update"
+                                class="btn btn-update reset-admin-password-button"
                                 data-admin-id="<?= $adminId ?>"
                                 data-admin-name="<?= $adminName ?>"
-                                onclick="openResetPasswordModal(this.dataset.adminId, this.dataset.adminName)">
+                                >
                                 Reset Password
                             </button>
 
@@ -244,7 +245,7 @@
                         <p class="modal-kicker">Admin account</p>
                         <h2 id="addAdminModalTitle">Add New Admin</h2>
                     </div>
-                    <button type="button" class="modal-close" onclick="closeAddAdminModal()" aria-label="Close add admin modal">&times;</button>
+                    <button type="button" class="modal-close" data-close-modal="addAdminModal" aria-label="Close add admin modal">&times;</button>
                 </div>
 
                 <form action="../operations/addAdmin.php" method="post" class="modal-form" data-confirm-title="Add New Admin" data-confirm-message="Create this new admin account?" data-confirm-confirm-label="Add Admin">
@@ -272,7 +273,7 @@
                     </div>
 
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-cancel" onclick="closeAddAdminModal()">Cancel</button>
+                        <button type="button" class="btn btn-cancel" data-close-modal="addAdminModal">Cancel</button>
                         <button type="submit" class="btn btn-submit">Add Admin</button>
                     </div>
                 </form>
@@ -288,7 +289,7 @@
                         <h2 id="resetPasswordModalTitle">Reset Password</h2>
                         <p class="created-by" id="resetPasswordAdminName"></p>
                     </div>
-                    <button type="button" class="modal-close" onclick="closeResetPasswordModal()" aria-label="Close reset password modal">&times;</button>
+                    <button type="button" class="modal-close" data-close-modal="resetPasswordModal" aria-label="Close reset password modal">&times;</button>
                 </div>
 
                 <form action="../operations/resetPassword.php" method="post" class="modal-form" data-confirm-title="Reset Password" data-confirm-message="This will replace the admin password with the new password you entered." data-confirm-confirm-label="Reset Password" data-confirm-danger="true">
@@ -297,11 +298,30 @@
 
                     <div class="form-group">
                         <label for="newAdminPassword">New Password</label>
-                        <input type="password" id="newAdminPassword" name="new_password" placeholder="New password" required>
+                        <input
+                            type="password"
+                            id="newAdminPassword"
+                            name="new_password"
+                            placeholder="New password"
+                            required
+                            
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmAdminPassword">Confirm Password</label>
+                        <input
+                            type="password"
+                            id="confirmAdminPassword"
+                            name="confirm_password"
+                            placeholder="Confirm password"
+                            required
+                            
+                        >
                     </div>
 
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-cancel" onclick="closeResetPasswordModal()">Cancel</button>
+                        <button type="button" class="btn btn-cancel" data-close-modal="resetPasswordModal">Cancel</button>
                         <button type="submit" class="btn btn-submit">Reset Password</button>
                     </div>
                 </form>
@@ -325,8 +345,8 @@
                     <h1>Welcome, <?= filter($firstName) ?></h1>
                 </div>
                 <div class="header-actions">
-                    <button type="button" class="addButton" onclick="openAdminAddItemModal()">Add Item</button>
-                    <button type="button" class="addButton" onclick="openAdminAddUserModal()">Add User</button>
+                    <button type="button" class="addButton" id="openAdminAddItemButton">Add Item</button>
+                    <button type="button" class="addButton open-admin-add-user-button">Add User</button>
                     <span class="role-pill">ADMIN</span>
                     <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
                         <?= csrfInput(); ?>
@@ -340,19 +360,19 @@
             <?php endif; ?>
 
             <nav class="dashboard-nav admin-dashboard-nav">
-                <button type="button" class="tab active" onclick="showAdminSection('home', this)">
+                <button type="button" class="tab active" data-admin-section="home">
                     <img src="../assets/img/icon/home.png" alt="" width="20">
                     Home
                 </button>
-                <button type="button" class="tab" onclick="showAdminSection('items', this)">
+                <button type="button" class="tab" data-admin-section="items">
                     <img src="../assets/img/icon/chocolate.png" alt="" width="20">
                     Pending Items
                 </button>
-                <button type="button" class="tab" onclick="showAdminSection('users', this)">
+                <button type="button" class="tab" data-admin-section="users">
                     <img src="../assets/img/icon/user.png" alt="" width="20">
                     Users
                 </button>
-                <button type="button" class="tab" onclick="showAdminSection('archives', this)">
+                <button type="button" class="tab" data-admin-section="archives">
                     Archived Items
                 </button>
             </nav>
@@ -453,7 +473,7 @@
                                     <div class="crud-actions management-actions">
                                         <button
                                             type="button"
-                                            class="btn btn-update"
+                                            class="btn btn-update admin-view-item-button"
                                             data-inventory-id="<?= $inventoryId ?>"
                                             data-chocolate-id="<?= $chocolateId ?>"
                                             data-chocolate-name="<?= $chocolateName ?>"
@@ -462,18 +482,18 @@
                                             data-created-by-email="<?= $createdByEmail ?>"
                                             data-created-by-role="<?= $createdByRole ?>"
                                             data-created-at="<?= $createdAt ?>"
-                                            onclick="openAdminViewItemModal(this)">
+                                            >
                                             View
                                         </button>
 
                                         <button
                                             type="button"
-                                            class="btn btn-update"
+                                            class="btn btn-update admin-update-item-button"
                                             data-inventory-id="<?= $inventoryId ?>"
                                             data-chocolate-id="<?= $chocolateId ?>"
                                             data-chocolate-name="<?= $chocolateName ?>"
                                             data-quantity="<?= $quantity ?>"
-                                            onclick="openAdminUpdateItemModal(this)">
+                                            >
                                             Update
                                         </button>
 
@@ -541,7 +561,7 @@
                                             <button type="submit" class="btn btn-submit">Approve</button>
                                         </form>
 
-                                        <form action="../operations/deleteProduct.php" method="post" data-confirm-title="Reject Request" data-confirm-message="This pending product request will be archived." data-confirm-confirm-label="Reject" data-confirm-danger="true">
+                                        <form action="../operations/deleteProduct.php" method="post" data-confirm-title="Reject Request" data-confirm-message="This pending product request will be removed from the pending list." data-confirm-confirm-label="Reject" data-confirm-danger="true">
                                             <?= csrfInput(); ?>
                                             <input type="hidden" name="id" value="<?= $inventoryId ?>">
                                             <button type="submit" class="btn btn-delete">Reject</button>
@@ -563,7 +583,7 @@
                         <h2>Regular Users</h2>
                         <p>Add users, archive users, or reset regular user passwords.</p>
                     </div>
-                    <button type="button" class="addButton" onclick="openAdminAddUserModal()">Add User</button>
+                    <button type="button" class="addButton open-admin-add-user-button">Add User</button>
                 </div>
 
                 <div class="dashboard-list">
@@ -598,10 +618,10 @@
                                 <div class="crud-actions management-actions">
                                     <button
                                         type="button"
-                                        class="btn btn-update"
+                                        class="btn btn-update admin-reset-user-password-button"
                                         data-user-id="<?= $regularUserId ?>"
                                         data-user-name="<?= $userName ?>"
-                                        onclick="openAdminResetUserPasswordModal(this.dataset.userId, this.dataset.userName)">
+                                        >
                                         Reset Password
                                     </button>
 
@@ -683,7 +703,7 @@
                             <p class="modal-kicker">Admin operation</p>
                             <h2 id="adminAddItemModalTitle">Add Item</h2>
                         </div>
-                        <button type="button" class="modal-close" onclick="closeAdminAddItemModal()" aria-label="Close add item modal">&times;</button>
+                        <button type="button" class="modal-close" data-close-modal="adminAddItemModal" aria-label="Close add item modal">&times;</button>
                     </div>
 
                     <form action="../operations/addProduct.php" method="post" class="modal-form" data-confirm-title="Add Item" data-confirm-message="Add this item directly to active inventory?" data-confirm-confirm-label="Add Item">
@@ -707,7 +727,7 @@
                         </div>
 
                         <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" onclick="closeAdminAddItemModal()">Cancel</button>
+                            <button type="button" class="btn btn-cancel" data-close-modal="adminAddItemModal">Cancel</button>
                             <button type="submit" class="btn btn-submit">Add Item</button>
                         </div>
                     </form>
@@ -723,7 +743,7 @@
                             <h2 id="adminUpdateItemModalTitle">Update Item</h2>
                             <p class="created-by" id="adminUpdateItemName"></p>
                         </div>
-                        <button type="button" class="modal-close" onclick="closeAdminUpdateItemModal()" aria-label="Close update item modal">&times;</button>
+                        <button type="button" class="modal-close" data-close-modal="adminUpdateItemModal" aria-label="Close update item modal">&times;</button>
                     </div>
 
                     <form action="../operations/updateProduct.php" method="post" class="modal-form" data-confirm-title="Update Item" data-confirm-message="Save changes to this active inventory item?" data-confirm-confirm-label="Save Changes">
@@ -748,7 +768,7 @@
                         </div>
 
                         <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" onclick="closeAdminUpdateItemModal()">Cancel</button>
+                            <button type="button" class="btn btn-cancel" data-close-modal="adminUpdateItemModal">Cancel</button>
                             <button type="submit" class="btn btn-submit">Save Changes</button>
                         </div>
                     </form>
@@ -763,7 +783,7 @@
                             <p class="modal-kicker">Item details</p>
                             <h2 id="adminViewItemModalTitle">View Item</h2>
                         </div>
-                        <button type="button" class="modal-close" onclick="closeAdminViewItemModal()" aria-label="Close view item modal">&times;</button>
+                        <button type="button" class="modal-close" data-close-modal="adminViewItemModal" aria-label="Close view item modal">&times;</button>
                     </div>
 
                     <div class="confirm-body">
@@ -775,7 +795,7 @@
                     </div>
 
                     <div class="modal-actions">
-                        <button type="button" class="btn btn-submit" onclick="closeAdminViewItemModal()">Close</button>
+                        <button type="button" class="btn btn-submit" data-close-modal="adminViewItemModal">Close</button>
                     </div>
                 </div>
             </section>
@@ -788,7 +808,7 @@
                             <p class="modal-kicker">User account</p>
                             <h2 id="adminAddUserModalTitle">Add User</h2>
                         </div>
-                        <button type="button" class="modal-close" onclick="closeAdminAddUserModal()" aria-label="Close add user modal">&times;</button>
+                        <button type="button" class="modal-close" data-close-modal="adminAddUserModal" aria-label="Close add user modal">&times;</button>
                     </div>
 
                     <form action="../operations/addUser.php" method="post" class="modal-form" data-confirm-title="Add User" data-confirm-message="Create this regular user account?" data-confirm-confirm-label="Add User">
@@ -812,11 +832,30 @@
 
                         <div class="form-group">
                             <label for="adminUserPassword">Password</label>
-                            <input type="password" id="adminUserPassword" name="password" placeholder="Temporary password" required>
+                            <input
+                                type="password"
+                                id="adminUserPassword"
+                                name="password"
+                                placeholder="Temporary password"
+                                required
+                                
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adminUserConfirmPassword">Confirm Password</label>
+                            <input
+                                type="password"
+                                id="adminUserConfirmPassword"
+                                name="confirm_password"
+                                placeholder="Confirm password"
+                                required
+                                
+                            >
                         </div>
 
                         <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" onclick="closeAdminAddUserModal()">Cancel</button>
+                            <button type="button" class="btn btn-cancel" data-close-modal="adminAddUserModal">Cancel</button>
                             <button type="submit" class="btn btn-submit">Add User</button>
                         </div>
                     </form>
@@ -832,7 +871,7 @@
                             <h2 id="adminResetUserPasswordModalTitle">Reset User Password</h2>
                             <p class="created-by" id="adminResetUserPasswordName"></p>
                         </div>
-                        <button type="button" class="modal-close" onclick="closeAdminResetUserPasswordModal()" aria-label="Close reset user password modal">&times;</button>
+                        <button type="button" class="modal-close" data-close-modal="adminResetUserPasswordModal" aria-label="Close reset user password modal">&times;</button>
                     </div>
 
                     <form action="../operations/resetPassword.php" method="post" class="modal-form" data-confirm-title="Reset User Password" data-confirm-message="This will replace the regular user's password." data-confirm-confirm-label="Reset Password" data-confirm-danger="true">
@@ -841,11 +880,30 @@
 
                         <div class="form-group">
                             <label for="adminNewUserPassword">New Password</label>
-                            <input type="password" id="adminNewUserPassword" name="new_password" placeholder="New password" required>
+                            <input
+                                type="password"
+                                id="adminNewUserPassword"
+                                name="new_password"
+                                placeholder="New password"
+                                required
+                                
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adminConfirmUserPassword">Confirm Password</label>
+                            <input
+                                type="password"
+                                id="adminConfirmUserPassword"
+                                name="confirm_password"
+                                placeholder="Confirm password"
+                                required
+                                
+                            >
                         </div>
 
                         <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" onclick="closeAdminResetUserPasswordModal()">Cancel</button>
+                            <button type="button" class="btn btn-cancel" data-close-modal="adminResetUserPasswordModal">Cancel</button>
                             <button type="submit" class="btn btn-submit">Reset Password</button>
                         </div>
                     </form>
@@ -870,7 +928,7 @@
                     <h1>Product</h1>
                 </div>
                 <div class="header-actions">
-                    <button type="button" class="addButton" onclick="openAddProductModal()">Add Product</button>
+                    <button type="button" class="addButton" id="openAddProductButton">Add Product</button>
                     <form action="../operations/logout.php" method="post" class="logout-form" data-confirm-title="Confirm Logout" data-confirm-message="You will need to sign in again to access your dashboard." data-confirm-confirm-label="Logout" data-confirm-danger="true">
                         <?= csrfInput(); ?>
                         <button type="submit" class="logoutButton">Logout</button>
@@ -885,7 +943,7 @@
                         placeholder="Search a Chocolate"
                         class="search-bar"
                         id="searchInput"
-                        oninput="filterChocolates()">
+                        >
                 </div>
             </div>
 
@@ -898,7 +956,7 @@
                     type="button"
                     class="regular-tab-btn active"
                     id="regularActiveTab"
-                    onclick="showRegularActive()"
+                    data-regular-tab="active"
                     role="tab"
                     aria-controls="regularActivePanel"
                     aria-selected="true">
@@ -910,7 +968,7 @@
                     type="button"
                     class="regular-tab-btn"
                     id="regularPendingTab"
-                    onclick="showRegularPending()"
+                    data-regular-tab="pending"
                     role="tab"
                     aria-controls="regularPendingPanel"
                     aria-selected="false">
@@ -1031,7 +1089,7 @@
                             <p class="modal-kicker">Product request</p>
                             <h2 id="addProductModalTitle">Add Product</h2>
                         </div>
-                        <button type="button" class="modal-close" onclick="closeAddProductModal()" aria-label="Close add product modal">&times;</button>
+                        <button type="button" class="modal-close" data-close-modal="addProductModal" aria-label="Close add product modal">&times;</button>
                     </div>
 
                     <form action="../operations/addProduct.php" method="post" class="modal-form" data-confirm-title="Submit Product Request" data-confirm-message="Submit this product request for admin approval?" data-confirm-confirm-label="Submit Request">
@@ -1055,7 +1113,7 @@
                         </div>
 
                         <div class="modal-actions">
-                            <button type="button" class="btn btn-cancel" onclick="closeAddProductModal()">Cancel</button>
+                            <button type="button" class="btn btn-cancel" data-close-modal="addProductModal">Cancel</button>
                             <button type="submit" class="btn btn-submit">Submit Request</button>
                         </div>
                     </form>
@@ -1075,7 +1133,7 @@
                 <p class="modal-kicker" id="confirmActionKicker">Confirmation</p>
                 <h2 id="confirmActionTitle">Confirm Action</h2>
             </div>
-            <button type="button" class="modal-close" onclick="closeConfirmActionModal()" aria-label="Close confirmation modal">&times;</button>
+            <button type="button" class="modal-close" data-close-modal="confirmActionModal" aria-label="Close confirmation modal">&times;</button>
         </div>
 
         <div class="confirm-body">
@@ -1087,193 +1145,12 @@
         </div>
 
         <div class="modal-actions confirmation-actions">
-            <button type="button" class="btn btn-cancel" onclick="closeConfirmActionModal()">Cancel</button>
-            <button type="button" class="btn btn-submit" id="confirmActionButton" onclick="confirmPendingAction()">Confirm</button>
+            <button type="button" class="btn btn-cancel" data-close-modal="confirmActionModal">Cancel</button>
+            <button type="button" class="btn btn-submit" id="confirmActionButton" >Confirm</button>
         </div>
     </div>
 </section>
 
-
-<script>
-    let pendingActionForm = null;
-
-    function closeConfirmActionModal() {
-        pendingActionForm = null;
-        closeModalById('confirmActionModal');
-    }
-
-    function openConfirmActionModal(form) {
-        pendingActionForm = form;
-
-        const title = document.getElementById('confirmActionTitle');
-        const message = document.getElementById('confirmActionMessage');
-        const subtext = document.getElementById('confirmActionSubtext');
-        const button = document.getElementById('confirmActionButton');
-        const icon = document.getElementById('confirmActionIcon');
-
-        if (title) title.textContent = form.dataset.confirmTitle || 'Confirm Action';
-        if (message) message.textContent = form.dataset.confirmMessage || 'Are you sure you want to continue?';
-        if (subtext) subtext.textContent = 'This action will continue after you confirm.';
-        if (button) button.textContent = form.dataset.confirmConfirmLabel || 'Confirm';
-
-        if (button) {
-            button.classList.toggle('btn-delete', form.dataset.confirmDanger === 'true');
-            button.classList.toggle('btn-submit', form.dataset.confirmDanger !== 'true');
-        }
-
-        if (icon) {
-            icon.textContent = form.dataset.confirmDanger === 'true' ? '!' : '✓';
-        }
-
-        openModalById('confirmActionModal');
-    }
-
-    function confirmPendingAction() {
-        if (!pendingActionForm) return;
-
-        const formToSubmit = pendingActionForm;
-        pendingActionForm = null;
-        closeModalById('confirmActionModal');
-
-        formToSubmit.dataset.confirmed = 'true';
-
-        if (typeof formToSubmit.requestSubmit === 'function') {
-            formToSubmit.requestSubmit();
-        } else {
-            formToSubmit.submit();
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('form[data-confirm-title]').forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                if (form.dataset.confirmed === 'true') {
-                    return;
-                }
-
-                event.preventDefault();
-                openConfirmActionModal(form);
-            });
-        });
-
-        document.querySelectorAll('[data-auto-hide]').forEach(function (element) {
-            const delay = parseInt(element.dataset.autoHide || '3000', 10);
-            setTimeout(function () {
-                element.style.display = 'none';
-            }, delay);
-        });
-    });
-
-    function showAdminSection(sectionId, button) {
-        const adminSection = document.getElementById('admin');
-        if (!adminSection) return;
-
-        const sections = adminSection.querySelectorAll('.admin-section');
-        sections.forEach((section) => {
-            section.style.display = section.id === sectionId ? 'block' : 'none';
-        });
-
-        const tabs = adminSection.querySelectorAll('.admin-dashboard-nav .tab');
-        tabs.forEach((tab) => tab.classList.remove('active'));
-
-        if (button) {
-            button.classList.add('active');
-        }
-    }
-
-    function openModalById(id) {
-        const modal = document.getElementById(id);
-        if (!modal) return;
-
-        modal.classList.add('active');
-        modal.classList.add('show');
-        modal.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeModalById(id) {
-        const modal = document.getElementById(id);
-        if (!modal) return;
-
-        modal.classList.remove('active');
-        modal.classList.remove('show');
-        modal.setAttribute('aria-hidden', 'true');
-    }
-
-    function openAdminAddItemModal() {
-        openModalById('adminAddItemModal');
-    }
-
-    function closeAdminAddItemModal() {
-        closeModalById('adminAddItemModal');
-    }
-
-    function openAdminUpdateItemModal(button) {
-        const itemId = document.getElementById('adminUpdateItemId');
-        const itemName = document.getElementById('adminUpdateItemName');
-        const itemSelect = document.getElementById('adminUpdateChocolateItem');
-        const itemQuantity = document.getElementById('adminUpdateItemQuantity');
-
-        if (itemId) itemId.value = button.dataset.inventoryId || '';
-        if (itemName) itemName.textContent = button.dataset.chocolateName || '';
-        if (itemSelect) itemSelect.value = button.dataset.chocolateId || '';
-        if (itemQuantity) itemQuantity.value = button.dataset.quantity || '';
-
-        openModalById('adminUpdateItemModal');
-    }
-
-    function closeAdminUpdateItemModal() {
-        closeModalById('adminUpdateItemModal');
-    }
-
-    function openAdminViewItemModal(button) {
-        const itemName = document.getElementById('adminViewItemName');
-        const itemDetails = document.getElementById('adminViewItemDetails');
-
-        const name = button.dataset.chocolateName || 'Chocolate item';
-        const quantity = button.dataset.quantity || '0';
-        const createdBy = button.dataset.createdBy || 'Unknown user';
-        const createdByEmail = button.dataset.createdByEmail || '';
-        const createdByRole = button.dataset.createdByRole || '';
-        const createdAt = button.dataset.createdAt || '';
-
-        if (itemName) itemName.textContent = name;
-        if (itemDetails) {
-            itemDetails.innerHTML =
-                'Quantity: <strong>' + quantity + '</strong><br>' +
-                'Created by: ' + createdBy + (createdByEmail ? ' · ' + createdByEmail : '') + '<br>' +
-                'Role: ' + createdByRole + '<br>' +
-                'Created at: ' + createdAt;
-        }
-
-        openModalById('adminViewItemModal');
-    }
-
-    function closeAdminViewItemModal() {
-        closeModalById('adminViewItemModal');
-    }
-
-    function openAdminAddUserModal() {
-        openModalById('adminAddUserModal');
-    }
-
-    function closeAdminAddUserModal() {
-        closeModalById('adminAddUserModal');
-    }
-
-    function openAdminResetUserPasswordModal(userId, userName) {
-        const idInput = document.getElementById('adminResetUserPasswordId');
-        const nameText = document.getElementById('adminResetUserPasswordName');
-
-        if (idInput) idInput.value = userId || '';
-        if (nameText) nameText.textContent = userName || '';
-
-        openModalById('adminResetUserPasswordModal');
-    }
-
-    function closeAdminResetUserPasswordModal() {
-        closeModalById('adminResetUserPasswordModal');
-    }
-</script>
 
 <script src="../assets/js/script.js?<?php echo time(); ?>"></script>
 </body>

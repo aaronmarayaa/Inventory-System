@@ -1,146 +1,127 @@
 <?php
-    require_once '../services/authorize.php';
-    authorize(['SUPER_ADMIN']);
+require_once '../services/authorize.php';
+authorize(['SUPER_ADMIN']);
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: ../exceptions/forbidden.php');
-        exit();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: ../exceptions/forbidden.php');
+    exit();
+}
+
+require_once '../security/csrf.php';
+requireValidCsrfToken('../pages/home.php?error=invalid_request');
+require '../lib/connection.php';
+
+function redirectHome(string $query): void {
+    header('Location: ../pages/home.php?' . $query);
+    exit();
+}
+
+function createUuidV4(): string {
+    $data = random_bytes(16);
+    $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
+    $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
+
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+}
+
+$existingUserId = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
+
+try {
+    // Promote an existing REGULAR user to ADMIN.
+    if ($existingUserId) {
+        $promoteStatement = $conn->prepare("UPDATE users
+            SET role = 'ADMIN', status = 'ACTIVE'
+            WHERE id = ?
+              AND role = 'REGULAR'
+              AND status = 'ACTIVE'");
+
+        if (!$promoteStatement) {
+            throw new Exception($conn->error);
+        }
+
+        $promoteStatement->bind_param('i', $existingUserId);
+
+        if (!$promoteStatement->execute()) {
+            throw new Exception($promoteStatement->error);
+        }
+
+        redirectHome('success=admin_promoted');
     }
 
-    require_once '../security/csrf.php';
-    requireValidCsrfToken('../pages/home.php?error=invalid_request');
-    require '../lib/connection.php';
+    // Create a new ADMIN account from the modal.
+    $firstName = trim($_POST['first_name'] ?? '');
+    $lastName = trim($_POST['last_name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-    function redirectHome(string $query): void {
-        header('Location: ../pages/home.php?' . $query);
-        exit();
+    if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || trim($password) === '') {
+        redirectHome('error=invalid_admin_input');
     }
 
-    function createUuidV4(): string {
-        $data = random_bytes(16);
-        $data[6] = chr((ord($data[6]) & 0x0f) | 0x40);
-        $data[8] = chr((ord($data[8]) & 0x3f) | 0x80);
+    $checkStatement = $conn->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
 
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    if (!$checkStatement) {
+        throw new Exception($conn->error);
     }
 
-    function usersTableHasColumn(mysqli $conn, string $column): bool {
-        $columnCheck = $conn->prepare('SHOW COLUMNS FROM users LIKE ?');
+    $checkStatement->bind_param('s', $email);
+    $checkStatement->execute();
+    $existingUser = $checkStatement->get_result();
 
-        if (!$columnCheck) {
-            throw new Exception('Prepare column check failed: ' . $conn->error);
-        }
-
-        $columnCheck->bind_param('s', $column);
-        $columnCheck->execute();
-        $result = $columnCheck->get_result();
-        $hasColumn = $result && $result->num_rows > 0;
-        $columnCheck->close();
-
-        return $hasColumn;
+    if ($existingUser && $existingUser->num_rows > 0) {
+        redirectHome('error=email_exists');
     }
 
-    $existingUserId = filter_input(INPUT_POST, 'user_id', FILTER_VALIDATE_INT);
+    // Your current sample database stores plain text passwords.
+    // This keeps it compatible with your current login code.
+    $passwordForDatabase = $password;
+    $uuid = createUuidV4();
+    $role = 'ADMIN';
+    $status = 'ACTIVE';
 
-    try {
-        if ($existingUserId) {
-            $promoteStatement = $conn->prepare("UPDATE users
-                SET role = 'ADMIN', status = 'ACTIVE'
-                WHERE id = ?
-                  AND role = 'REGULAR'
-                  AND status = 'ACTIVE'");
+    $insertStatement = $conn->prepare('INSERT INTO users
+        (uuid, first_name, last_name, email, password, role, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)');
 
-            if (!$promoteStatement) {
-                throw new Exception('Prepare promote user failed: ' . $conn->error);
-            }
-
-            $promoteStatement->bind_param('i', $existingUserId);
-
-            if (!$promoteStatement->execute()) {
-                throw new Exception('Promote user failed: ' . $promoteStatement->error);
-            }
-
-            if ($promoteStatement->affected_rows === 0) {
-                redirectHome('error=invalid_user');
-            }
-
-            redirectHome('success=admin_promoted');
-        }
-
-        $firstName = trim($_POST['first_name'] ?? '');
-        $lastName = trim($_POST['last_name'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
-
-        if ($firstName === '' || $lastName === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || trim($password) === '') {
-            redirectHome('error=invalid_admin_input');
-        }
-
-        $checkStatement = $conn->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
-
-        if (!$checkStatement) {
-            throw new Exception('Prepare email check failed: ' . $conn->error);
-        }
-
-        $checkStatement->bind_param('s', $email);
-        $checkStatement->execute();
-        $existingUser = $checkStatement->get_result();
-
-        if ($existingUser && $existingUser->num_rows > 0) {
-            redirectHome('error=email_exists');
-        }
-
-        $passwordForDatabase = $password;
-        $role = 'ADMIN';
-        $status = 'ACTIVE';
-
-        if (usersTableHasColumn($conn, 'uuid')) {
-            $uuid = createUuidV4();
-            $insertStatement = $conn->prepare('INSERT INTO users
-                (uuid, first_name, last_name, email, password, role, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)');
-
-            if (!$insertStatement) {
-                throw new Exception('Prepare admin insert with uuid failed: ' . $conn->error);
-            }
-
-            $insertStatement->bind_param('sssssss', $uuid, $firstName, $lastName, $email, $passwordForDatabase, $role, $status);
-        } else {
-            $insertStatement = $conn->prepare('INSERT INTO users
-                (first_name, last_name, email, password, role, status)
-                VALUES (?, ?, ?, ?, ?, ?)');
-
-            if (!$insertStatement) {
-                throw new Exception('Prepare admin insert failed: ' . $conn->error);
-            }
-
-            $insertStatement->bind_param('ssssss', $firstName, $lastName, $email, $passwordForDatabase, $role, $status);
-        }
-
-        if (!$insertStatement->execute()) {
-            throw new Exception('Admin insert failed: ' . $insertStatement->error);
-        }
-
-        redirectHome('success=admin_added');
-    } catch (Exception $e) {
-        error_log('Add admin failed: ' . $e->getMessage());
-        header('Location: ../exceptions/internalServerError.php');
-        exit();
-    } finally {
-        if (isset($promoteStatement)) {
-            $promoteStatement->close();
-        }
-
-        if (isset($checkStatement)) {
-            $checkStatement->close();
-        }
-
-        if (isset($insertStatement)) {
-            $insertStatement->close();
-        }
-
-        if (isset($conn)) {
-            $conn->close();
-        }
+    if (!$insertStatement) {
+        throw new Exception($conn->error);
     }
+
+    $insertStatement->bind_param(
+        'sssssss',
+        $uuid,
+        $firstName,
+        $lastName,
+        $email,
+        $passwordForDatabase,
+        $role,
+        $status
+    );
+
+    if (!$insertStatement->execute()) {
+        throw new Exception($insertStatement->error);
+    }
+
+    redirectHome('success=admin_added');
+} catch (Exception $e) {
+    error_log('Add admin failed: ' . $e->getMessage());
+    header('Location: ../exceptions/internalServerError.php');
+    exit();
+} finally {
+    if (isset($promoteStatement)) {
+        $promoteStatement->close();
+    }
+
+    if (isset($checkStatement)) {
+        $checkStatement->close();
+    }
+
+    if (isset($insertStatement)) {
+        $insertStatement->close();
+    }
+
+    if (isset($conn)) {
+        $conn->close();
+    }
+}
 ?>

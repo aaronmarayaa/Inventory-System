@@ -1,10 +1,9 @@
 <?php
     session_start();
 
-    require_once __DIR__ . '/../security/csrf.php';
-    require_once __DIR__ . '/../security/rememberMe.php';
-    require __DIR__ . '/../lib/connection.php';
+    require "../lib/connection.php";
 
+    // login_process.php is inside /services, so ../index.php goes back to your login page.
     $loginPage = "../index.php";
 
     function redirectWithLoginError(string $message, string $loginPage): void {
@@ -15,10 +14,6 @@
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         redirectWithLoginError("Something went wrong. Please try again.", $loginPage);
-    }
-
-    if (!isCsrfTokenValid()) {
-        redirectWithLoginError("Invalid request. Please refresh the page and try again.", $loginPage);
     }
 
     $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
@@ -57,33 +52,49 @@
             redirectWithLoginError("Account is archived.", $loginPage);
         }
 
-        if ($password !== $user['password']) {
+        $storedPassword = (string) $user['password'];
+        $passwordInfo = password_get_info($storedPassword);
+        $isHashedPassword = isset($passwordInfo['algo']) && $passwordInfo['algo'] !== 0;
+        $passwordMatches = false;
+
+        if ($isHashedPassword) {
+            $passwordMatches = password_verify($password, $storedPassword);
+        } else {
+            // Backward compatibility for old accounts that were saved before hashing was added.
+            $passwordMatches = hash_equals($storedPassword, $password);
+
+            if ($passwordMatches) {
+                $newPasswordHash = password_hash($password, PASSWORD_DEFAULT);
+                $rehashStatement = $conn->prepare('UPDATE users SET password = ? WHERE id = ?');
+
+                if ($rehashStatement) {
+                    $userIdForRehash = (int) $user['id'];
+                    $rehashStatement->bind_param('si', $newPasswordHash, $userIdForRehash);
+                    $rehashStatement->execute();
+                    $rehashStatement->close();
+                }
+            }
+        }
+
+        if (!$passwordMatches) {
             redirectWithLoginError("Invalid credentials.", $loginPage);
         }
 
         unset($_SESSION['login_error']);
 
-        setUserSession($user);
-
-        if (rememberMeChecked()) {
-            createRememberMeToken($conn, (int) $user['id']);
-        } else {
-            deleteRememberMeToken($conn);
-            clearRememberMeCookie();
-        }
+        $_SESSION['loginSuccess'] = true;
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['id'] = $user['id'];
+        $_SESSION['first_name'] = $user['first_name'];
+        $_SESSION['last_name'] = $user['last_name'];
 
         header("Location: ../pages/home.php");
         exit();
-    } catch (Throwable $exception) {
+    } catch (Exception $exception) {
         error_log("Login error: " . $exception->getMessage());
         redirectWithLoginError("Something went wrong. Please try again.", $loginPage);
     } finally {
-        if (isset($sqlStatement)) {
-            $sqlStatement->close();
-        }
-
-        if (isset($conn)) {
-            $conn->close();
-        }
+        if (isset($sqlStatement)) { $sqlStatement->close(); }
+        if (isset($conn)) { $conn->close(); }
     }
 ?>

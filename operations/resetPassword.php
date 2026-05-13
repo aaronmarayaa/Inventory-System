@@ -25,7 +25,7 @@
     require '../lib/connection.php';
 
     try {
-        $passwordForDatabase = $newPassword;
+        $passwordForDatabase = password_hash($newPassword, PASSWORD_DEFAULT);
 
         $resetStatement = $conn->prepare("UPDATE users
             SET password = ?
